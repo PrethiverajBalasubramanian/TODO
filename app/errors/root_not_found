@@ -1,0 +1,9 @@
+class RootNotFound < StandardError
+  attr_reader :property
+
+  def initialize(property)
+    @property = property
+
+    super(property + "can't be blank")
+  end
+end
