@@ -7,7 +7,6 @@ module ApiExceptionsHandler
   end
 
   def handle_exceptions(e)
-    debugger
     if e.is_a?(ActiveRecord::RecordInvalid)
       case e.record.errors.first.type
       when :taken
@@ -21,6 +20,8 @@ module ApiExceptionsHandler
       end
     elsif e.is_a?(ActiveRecord::RecordNotFound)
       invalid_url_path(e)
+    elsif e.is_a?(RootNotFound)
+      root_not_found(e)
     else
       internal_server_error(e)
     end
@@ -45,7 +46,6 @@ module ApiExceptionsHandler
     end
 
     def subceed_length(e)
-      debugger
       error = e.record.errors.first
       render_error_response(:LENGTH_SUBCEEDED, error.full_message, { property: error.attribute, minimum_length:  error.options[:count] })
     end
@@ -53,6 +53,10 @@ module ApiExceptionsHandler
     def exceed_length(e)
       error = e.record.errors.first
       render_error_response(:LENGTH_EXCEEDED, error.full_message, { property: error.attribute, maximum_length:  error.options[:count] })
+    end
+
+    def root_not_found(e)
+      render_error_response(:PROPERTY_NOT_FOUND, e.message, { property: e.property })
     end
 
     def internal_server_error(e)

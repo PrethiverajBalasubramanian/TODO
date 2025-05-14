@@ -4,6 +4,6 @@ class RootNotFound < StandardError
   def initialize(property)
     @property = property
 
-    super(property + "can't be blank")
+    super(property.to_s + " can't be blank")
   end
 end

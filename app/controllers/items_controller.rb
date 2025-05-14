@@ -8,8 +8,7 @@ class ItemsController < ApplicationController
 
   # GET /items
   def index
-    debugger
-    @items = @topics.items.All
+    @items = @topic.items.all
     if @items.empty?
       render nothing: true, status: 204
     else
@@ -29,10 +28,10 @@ class ItemsController < ApplicationController
   # POST /items
   def create
     status = -1
-    @items = item_params[:items]
-    response = item_params[:items].collect { |item|
+    response = item_params.collect { |item|
       begin
         @item = @topic.items.build(item)
+        @item.save!
         status = status == 207 || status == 400 ? 207 : 201
         render_create_response({ id: @item[:id] })
       rescue => e
@@ -48,7 +47,8 @@ class ItemsController < ApplicationController
   def update
     status = 400
     begin
-      item = topic_params[:items].first
+      debugger
+      item = item_params.first
       begin
         @item.update(item)
         response = render_update_response({ id: @item[:id] })
@@ -56,21 +56,19 @@ class ItemsController < ApplicationController
       rescue => e
         response = handle_exceptions(e)
       end
+      render_response_with_root(:item, response, status)
     rescue => ex
       render_response(handle_exceptions(ex), status)
     end
-
-    render_response_with_root(:item, response, status)
   end
 
   # DELETE /items/1
   def destroy
     begin
-      @topic.items.all.destroy_all
-
-      render_response_with_root(:topics, [ render_success_response("DELETED", "All items are deleted", {}) ], 200)
+      @item.destroy
+      render_response_with_root(:items, [ render_delete_response({ id: @item[:id] }) ], 200)
     rescue => e
-      handle_exceptions(e)
+      render_response(handle_exceptions(e), 400)
     end
   end
 
@@ -81,7 +79,7 @@ class ItemsController < ApplicationController
       item.save
     end
 
-    render render_update_response({})
+    render_response_with_root(:items, render_update_response({}), 200)
   end
 
   def mark_all_undone
@@ -91,31 +89,36 @@ class ItemsController < ApplicationController
       item.save
     end
 
-    render render_update_response({})
+    render_response_with_root(:items, render_update_response({}), 200)
   end
 
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_item
-      @item = @topic.items.find(params.expect(:id))
+      begin
+        @item = @topic.items.find(params.expect(:id))
+      rescue => e
+        render_response(handle_exceptions(e), 400)
+      end
     end
 
     # Only allow a list of trusted parameters through.
     def item_params
       begin
-        params.permit(topics: [ :name ]).require(:topics)
+        params.permit!.require(:items)
       rescue ActionController::ParameterMissing => e
         if e.param.equal?(:items)
-          require_relative "../errors/root_not_found"
-          handle_exception(RootNotFound.new(:topics))
-        else
-          handle_exception(e)
+          e = RootNotFound.new(:items)
         end
+        raise e
       end
-      params.permit(items: [ :description ])
     end
 
     def get_topic
-      @topic = Topic.find(params[:topic_id])
+      begin
+        @topic = Topic.find(params[:topic_id])
+      rescue => e
+        render_response(handle_exceptions(e), 400)
+      end
     end
 end

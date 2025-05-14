@@ -1,17 +1,38 @@
 class TopicsController < ApplicationController
   require_relative "concerns/api_response_handler"
   require_relative "concerns/api_exceptions_handler"
+  require_relative "concerns/query"
+  require_relative "../errors/root_not_found"
   extend ApiResponseHandler
   extend ApiExceptionsHandler
   before_action :set_topic, only: %i[ show update destroy ]
 
   # GET /topics
   def index
-    @topics = Topic.all
-    if @topics.empty?
-      render nothing: true, status: 204
-    else
-      render json: { topics: @topics }
+    begin
+      query = Query.new
+      debugger
+      if params.key?(:filter)
+        require "json"
+        filter = JSON.parse(params[:filter], symbolize_names: true)
+        query = Query.parse(filter)
+      end
+      query.apply_other_queries(params)
+
+      debugger
+
+      @topics = Topic.find_by_sql(query.build("topics"))
+
+      info = query.get_info
+      info[:count] = @topics.count
+
+      if @topics.empty?
+        render nothing: true, status: 204
+      else
+        render json: { topics: @topics, info: info }
+      end
+    rescue => e
+      render_response(handle_exceptions(e), 400)
     end
   end
 
@@ -27,26 +48,31 @@ class TopicsController < ApplicationController
   # POST /topics
   def create
     status = -1
+    begin
+      topics = topic_params
+      response = topics.collect { |topic|
+        begin
+          @topic = Topic.create!(topic)
+          status = status == 207 || status == 400 ? 207 : 201
+          render_create_response({ id: @topic[:id] })
+        rescue => e
+          status = status == 207 || status == 201 ? 207 : 400
+          handle_exceptions(e)
+        end
+      }
 
-    response = topic_params[:topics].collect { |topic|
-      begin
-        @topic = Topic.create!(topic)
-        status = status == 207 || status == 400 ? 207 : 201
-        render_create_response({ id: @topic[:id] })
-      rescue => e
-        status = status == 207 || status == 201 ? 207 : 400
-        handle_exceptions(e)
-      end
-    }
-
-    render_response_with_root(:topics, response, status)
+      render_response_with_root(:topics, response, status)
+    rescue => e
+      render_response(handle_exceptions(e), 400)
+    end
   end
 
   # PATCH/PUT /topics/1
   def update
     status = 400
     begin
-      topic = topic_params[:topics].first
+      topic = topic_params.first
+      debugger
       begin
         @topic.update(topic)
         response = render_update_response({ id: @topic[:id] })
@@ -54,11 +80,10 @@ class TopicsController < ApplicationController
       rescue => e
         response = handle_exceptions(e)
       end
+      render_response_with_root(:topics, response, status)
     rescue => ex
       render_response(handle_exceptions(ex), status)
     end
-
-    render_response_with_root(:topics, response, status)
   end
 
   # DELETE /topics/1
@@ -73,7 +98,7 @@ class TopicsController < ApplicationController
 
       render_response_with_root(:topics, [ render_success_response("DELETED", "All topics are deleted", {}) ], 200)
     rescue => e
-      handle_exceptions(e)
+      render_response(handle_exceptions(e), 400)
     end
   end
 
@@ -90,14 +115,12 @@ class TopicsController < ApplicationController
     # Only allow a list of trusted parameters through.
     def topic_params
       begin
-        params.permit(topics: [ :name ]).require(:topics)
+        params.permit!.require(:topics)
       rescue ActionController::ParameterMissing => e
         if e.param.equal?(:topics)
-          require_relative "../errors/root_not_found"
-          handle_exception(RootNotFound.new(:topics))
-        else
-          handle_exception(e)
+          e = RootNotFound.new(:topics)
         end
+       raise e
       end
     end
 end
