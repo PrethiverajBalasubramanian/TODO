@@ -11,17 +11,15 @@ class TopicsController < ApplicationController
   def index
     begin
       query = Query.new
-      debugger
       if params.key?(:filter)
         require "json"
         filter = JSON.parse(params[:filter], symbolize_names: true)
         query = Query.parse(filter)
       end
-      query.apply_other_queries(params)
+      query.resource = Topic
+      query.set_other_queries(params)
 
-      debugger
-
-      @topics = Topic.find_by_sql(query.build("topics"))
+      @topics = query.retrieve
 
       info = query.get_info
       info[:count] = @topics.count
@@ -72,7 +70,6 @@ class TopicsController < ApplicationController
     status = 400
     begin
       topic = topic_params.first
-      debugger
       begin
         @topic.update(topic)
         response = render_update_response({ id: @topic[:id] })

@@ -47,7 +47,6 @@ class ItemsController < ApplicationController
   def update
     status = 400
     begin
-      debugger
       item = item_params.first
       begin
         @item.update(item)

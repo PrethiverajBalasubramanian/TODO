@@ -12,21 +12,21 @@ class SimpleQuery
   end
 
   def self.parse(query)
-    SimpleQuery.new(query)
+    new(query)
   end
 
   def construct
-    "%s %s %s" % [ @attribute, @comparator, format_value(@value) ]
+    "(%s %s %s)" % [ @attribute, @comparator, format_value(@value) ]
   end
 
   private
   def format_value(value)
-    if @value.is_a?(String)
-      "'" + @value + "'"
-    elsif @value.is_a?(Array)
+    if value.is_a?(String)
+      "'" + value + "'"
+    elsif value.is_a?(Array)
       format_value(value[0])+ " AND " + format_value(value[1])
     else
-      @value
+      value.to_s
     end
   end
 end
