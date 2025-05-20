@@ -5,18 +5,19 @@ class TopicsController < ApplicationController
   require_relative "../errors/root_not_found"
   extend ApiResponseHandler
   extend ApiExceptionsHandler
+  
   before_action :set_topic, only: %i[ show update destroy ]
 
   # GET /topics
   def index
+    debugger
     begin
-      query = Query.new
+      query = Query.new(Topic)
       if params.key?(:filter)
         require "json"
         filter = JSON.parse(params[:filter], symbolize_names: true)
         query = Query.parse(filter)
       end
-      query.resource = Topic
       query.set_other_queries(params)
 
       @topics = query.retrieve

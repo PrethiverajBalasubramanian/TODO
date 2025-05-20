@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_05_07_054225) do
+ActiveRecord::Schema[8.0].define(version: 2025_05_20_151548) do
   create_table "items", charset: "utf8mb3", force: :cascade do |t|
     t.text "description"
     t.bigint "topic_id", null: false
@@ -20,6 +20,17 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_07_054225) do
     t.index ["topic_id"], name: "index_items_on_topic_id"
   end
 
+  create_table "reminders", charset: "utf8mb3", force: :cascade do |t|
+    t.text "type"
+    t.text "remind_at"
+    t.bigint "topic_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "status"
+    t.text "job_id"
+    t.index ["topic_id"], name: "index_remiders_on_topic_id"
+  end
+
   create_table "topics", charset: "utf8mb3", force: :cascade do |t|
     t.string "name"
     t.datetime "created_at", null: false
@@ -27,4 +38,5 @@ ActiveRecord::Schema[8.0].define(version: 2025_05_07_054225) do
   end
 
   add_foreign_key "items", "topics"
+  add_foreign_key "reminders", "topics"
 end

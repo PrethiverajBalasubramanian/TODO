@@ -17,6 +17,8 @@ module ApiExceptionsHandler
         exceed_length(e)
       when :too_short
         subceed_length(e)
+      when :invalid
+        invalid_data(e)
       end
     elsif e.is_a?(ActiveRecord::RecordNotFound)
       invalid_url_path(e)
@@ -33,12 +35,13 @@ module ApiExceptionsHandler
     end
 
     def invalid_url_path(e)
-      index = request.path.split("/").find_index(params.expect(e.primary_key)) - 1
+      debugger
+      index = request.path.split("/").find_index(e.id) - 1
       render_error_response(:INVALID_URL_PATH, "Invalid Data Given In Url Path.", { url_path_index: index })
     end
 
     def invalid_data(e)
-      render_error_response(:INVALID_DATA, "The given data is not valid.")
+      render_error_response(:INVALID_DATA, e.record.errors.first.full_message, { property: e.record.errors.first.attribute })
     end
 
     def duplicate_data(e)

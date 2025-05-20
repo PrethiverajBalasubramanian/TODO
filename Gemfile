@@ -45,3 +45,10 @@ group :development, :test do
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
 end
+
+gem 'redis'
+gem "sidekiq", "~> 8.0"
+gem 'sidekiq-cron'
+gem 'sidekiq-scheduler'
+gem 'fugit'
+gem 'sidekiq-status'
