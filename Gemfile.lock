@@ -95,6 +95,9 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     dotenv (3.1.8)
+    dotenv-rails (3.1.8)
+      dotenv (= 3.1.8)
+      railties (>= 6.1)
     drb (2.2.1)
     ed25519 (1.4.0)
     erubi (1.13.1)
@@ -334,6 +337,7 @@ PLATFORMS
   arm-linux-gnu
   arm-linux-musl
   arm64-darwin-23
+  arm64-darwin-24
   x86_64-linux
   x86_64-linux-gnu
   x86_64-linux-musl
@@ -342,6 +346,7 @@ DEPENDENCIES
   bootsnap
   brakeman
   debug
+  dotenv-rails
   fugit
   kamal
   mysql2 (~> 0.5.6)

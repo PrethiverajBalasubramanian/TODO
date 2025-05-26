@@ -2,6 +2,8 @@ class RemindersController < ApplicationController
   require_relative "concerns/api_response_handler"
   require_relative "concerns/api_exceptions_handler"
   require_relative "../jobs/reminder_job"
+  require "active_support/all"
+  require "sidekiq/cron/job"
   extend ApiResponseHandler
   extend ApiExceptionsHandler
 
@@ -20,24 +22,23 @@ class RemindersController < ApplicationController
   def show
    if @reminder.nil?
       render nothing: true, status: 204
-    else
+   else
       render json: { reminders: [ @reminder ] }
-    end
+   end
   end
 
   def create
-    require 'active_support/all'
-    require 'sidekiq/cron/job'
     status = -1
     response = reminder_params.collect { |reminder|
       begin
-        debugger
         @reminder = @topic.reminders.build(reminder)
         if @reminder.type.eql?("once")
           ist_time = Time.use_zone("Asia/Kolkata") do
-            Time.zone.parse(@reminder.remind_at)
+            Time.zone.parse(@reminder.remind_at).iso8601
           end
-          @reminder.job_id = ReminderJob.perform_at(ist_time.utc)
+          topic_id = @topic.id
+          # @reminder.job_id = ReminderJob.perform_at(ist_time, @topic.id)
+          @reminder.job_id = ReminderJob.perform_async(topic_id)
         else
           Sidekiq::Cron::Job.create(
             name:  @topic.id+"#"+@reminder.id,
@@ -61,29 +62,29 @@ class RemindersController < ApplicationController
   def destroy
     begin
       if @reminder.type.eql?("once")
-        Sidekiq::Status::kill(@reminder.job_id)
+        Sidekiq::Status.kill(@reminder.job_id)
 
       else
         Sidekiq::Cron::Job.destroy(@topic.id+"#"+@reminder.id)
       end
-      render_response_with_root(:reminders, [render_delete_response({ id: @reminder[:id] })], 200)
+      render_response_with_root(:reminders, [ render_delete_response({ id: @reminder[:id] }) ], 200)
     rescue => e
       render_response(handle_exceptions(e), 400)
-    end 
-  end
-
-  def pause
-    enable(true, "ENABLED", "The Job enabled successfully!!!")
+    end
   end
 
   def resume
-    enable(true, "DISABLED", "The Job disabled successfully!!!")
+    enable(true, "ENABLED", "The Job enabled successfully!!!")
+  end
+
+  def pause
+    enable(false, "DISABLED", "The Job disabled successfully!!!")
   end
 
   def status
-    @reminder.status = Sidekiq::Status::status(job_id)
+    @reminder.status = Sidekiq::Status.status(job_id)
   end
-  
+
 
   private
   def set_reminder
@@ -95,15 +96,15 @@ class RemindersController < ApplicationController
   end
 
   def reminder_params
-      begin
-        params.permit(reminders: [:type, :remind_at]).require(:reminders)
-      rescue ActionController::ParameterMissing => e
-        if e.param.eql?(:reminders)
-          e = RootNotFound.new(:reminders)
-        end
-        raise e
+    begin
+      params.permit(reminders: [ :type, :remind_at ]).require(:reminders)
+    rescue ActionController::ParameterMissing => e
+      if e.param.eql?(:reminders)
+        e = RootNotFound.new(:reminders)
       end
+      raise e
     end
+  end
 
     def get_topic
       begin
@@ -118,7 +119,7 @@ class RemindersController < ApplicationController
         cron_job = Sidekiq::Cron::Job.find(@topic.id+"#"+@reminder.id)
         cron_job.enabled = enable
         cron_job.save
-        render_response_with_root(:reminders, [render_success_response(code, {id: @reminder.id},message )], 200)
+        render_response_with_root(:reminders, [ render_success_response(code, { id: @reminder.id }, message) ], 200)
       rescue => e
         render_response(handle_exceptions(e), 400)
       end

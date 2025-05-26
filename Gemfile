@@ -46,9 +46,11 @@ group :development, :test do
   gem "rubocop-rails-omakase", require: false
 end
 
-gem 'redis'
+gem "dotenv-rails", groups: [ :development, :test ]
+
+gem "redis"
 gem "sidekiq", "~> 8.0"
-gem 'sidekiq-cron'
-gem 'sidekiq-scheduler'
-gem 'fugit'
-gem 'sidekiq-status'
+gem "sidekiq-cron"
+gem "sidekiq-scheduler"
+gem "fugit"
+gem "sidekiq-status"

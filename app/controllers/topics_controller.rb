@@ -10,7 +10,6 @@ class TopicsController < ApplicationController
 
   # GET /topics
   def index
-    debugger
     begin
       query = Query.new(Topic)
       if params.key?(:filter)

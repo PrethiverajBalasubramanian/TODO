@@ -8,14 +8,13 @@ class TimestampOrCronValidator < ActiveModel::EachValidator
   private
 
   def valid_timestamp?(value)
-    debugger
-    Time.zone.parse(value.to_s) > Time.current
+    Time.zone.parse(value.to_s).in_time_zone("Asia/Kolkata").iso8601 > Time.current.in_time_zone("Asia/Kolkata").iso8601
   rescue ArgumentError, TypeError
     false
   end
 
   def valid_cron?(value)
-    require 'fugit'
+    require "fugit"
     Fugit::Cron.parse(value).present?
   rescue
     false

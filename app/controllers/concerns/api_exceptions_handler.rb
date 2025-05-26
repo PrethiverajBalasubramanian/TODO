@@ -35,7 +35,6 @@ module ApiExceptionsHandler
     end
 
     def invalid_url_path(e)
-      debugger
       index = request.path.split("/").find_index(e.id) - 1
       render_error_response(:INVALID_URL_PATH, "Invalid Data Given In Url Path.", { url_path_index: index })
     end

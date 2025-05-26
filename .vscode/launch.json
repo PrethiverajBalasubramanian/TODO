@@ -21,6 +21,15 @@
             "type": "ruby_lsp",
             "name": "Attach debugger",
             "request": "attach"
+        },
+        {
+            "name": "Debug Rails Server",
+            "type": "ruby",
+            "request": "launch",
+            "program": "${workspaceRoot}/bin/rails",
+            "args": ["server"],
+            "useBundler": true,
+            "cwd": "${workspaceRoot}"
         }
     ]
 }

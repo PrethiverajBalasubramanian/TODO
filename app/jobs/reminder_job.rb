@@ -1,10 +1,11 @@
-require 'sidekiq'
+require "sidekiq"
 
 class ReminderJob
   include Sidekiq::Worker
 
-  def perform(topic)
+  def perform(topic_id)
     debugger
-    puts "Reminder: look at the #{topic.name}"
+    @topic = Topic.find(topic_id)
+    ReminderMailer.remind_mail(@topic).deliver_now
   end
 end
