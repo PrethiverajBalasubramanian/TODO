@@ -77,6 +77,6 @@ Rails.application.configure do
     authentication: "plain",
     enable_starttls_auto: true,
     user_name: "prethiveraj.freshworkstest@gmail.com",
-    password: "Test@321" # Or use an app password
+    password: "" # Or use an app password
   }
 end
